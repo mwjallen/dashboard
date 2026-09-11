@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 st.set_page_config(page_title="Data Visualisation Dashboard", layout="wide")
 
@@ -16,6 +15,12 @@ df=pd.read_excel("cleaned_ds.xlsx")
 
 # Drop the Record_Id
 df_cols_filtered = df.columns.drop(["Record_ID"])
+
+# 1. Define the filters
+# We use lists or variables to track what the user picked
+selection_1 = st.sidebar.selectbox("Select City", options=df['City'].unique())
+selection_2 = st.sidebar.selectbox("Select 1st Filter", options=df_cols_filtered.unique())
+selection_3 = st.sidebar.selectbox("Select 2nd Filter", options=df_cols_filtered.unique())
 
 # Define the limit
 MAX_ITEMS = 3
