@@ -59,7 +59,7 @@ df['Date'] = pd.to_datetime(df['Date'])
 df = df.sort_values('Date')
 
 # Add required filters to sidebar
-st.sidebar.header("Dashboard Filters")
+st.sidebar.header("💼 Executive Filters")
 
 # Filter 1: Fixed City
 selection_1 = st.sidebar.selectbox("Select City", options=df['City'].unique())
@@ -250,7 +250,7 @@ with tab5:
                 )
                 fig_violin.update_xaxes(type='category') # FORCES categorical layout
                 fig_violin.update_layout(showlegend=False, margin=dict(t=30, b=0))
-                st.plotly_chart(fig_violin, use_container_width=True)
+                st.plotly_chart(fig_violin, width='stretch')
             
             with col2:
                 fig_box = px.box(
@@ -263,7 +263,7 @@ with tab5:
                 )
                 fig_box.update_xaxes(type='category') # FORCES categorical layout
                 fig_box.update_layout(showlegend=False, margin=dict(t=30, b=0))
-                st.plotly_chart(fig_box, use_container_width=True)
+                st.plotly_chart(fig_box, width='stretch')
             
             st.divider()
 
