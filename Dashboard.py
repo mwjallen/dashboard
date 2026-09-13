@@ -2,14 +2,12 @@ import streamlit as st
 import pandas as pd
 import plotly_express as px
 
-# --- 1. PAGE CONFIG & STYLING ---
+# Set page style
 st.set_page_config(layout="wide")
 
 # Show the browser window scrollbar
 import modules.scrollbar as scrollbar
 scrollbar.show_scrollbar()
-
-st.title('Ecomove Management Dashboard')
 
 st.markdown("""
     <style>
@@ -24,13 +22,19 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
+st.title('Ecomove Management Dashboard')
+st.sidebar.title('Ecomove')
+st.sidebar.divider()
+# Add the Overall Metrics
+st.subheader('Overall Metrics')
 
-# --- 2. DATA LOADING ---
+st.markdown('<p>The overall metrics for all cities and transport are displayed here.</p>', unsafe_allow_html=True)
+
+# Load data from ecomove.ipynb after cleaning
 
 df=pd.read_excel("cleaned_ds.xlsx")
 
-# COORDINATE MAPPING: This adds Lat/Lon to your 'City' column so the map works.
-# Replace these coordinates with your actual city locations.
+# Map coordinates for each city in the data
 city_coords = {
     'Paris': {'lat': 48.8566, 'lon': 2.3522},
     'Rotterdam':{'lat':51.9244, 'lon': 4.4777},
@@ -54,7 +58,7 @@ df['lon'] = df['City'].map(lambda x: city_coords.get(x, {}).get('lon', 0))
 df['Date'] = pd.to_datetime(df['Date'])
 df = df.sort_values('Date')
 
-# --- 3. SIDEBAR FILTERS ---
+# Add required filters to sidebar
 st.sidebar.header("Dashboard Filters")
 
 # Filter 1: Fixed City
@@ -67,21 +71,21 @@ filter_options = ['Transport_Mode', 'Route_Type', 'Weather', 'Event_Day', 'Count
 col_name_1 = st.sidebar.selectbox("Option 1", options=filter_options)
 selection_2 = st.sidebar.selectbox(f"Select {col_name_1}", options=df[col_name_1].unique())
 
-# --- THE FIX: Remove the chosen col_name_1 from the options for col_name_2 ---
+# Ensure selected categories cannot be selected again
 remaining_options = [opt for opt in filter_options if opt != col_name_1]
 
-# Filter 3: Now only shows options NOT chosen in Filter 1
+# Show remaining filters
 col_name_2 = st.sidebar.selectbox("Option 2", options=remaining_options)
 selection_3 = st.sidebar.selectbox(f"Select {col_name_2}", options=df[col_name_2].unique())
 
-# --- 4. DYNAMIC FILTERING LOGIC ---
+# Filtering process
 filtered_df = df[
     (df['City'] == selection_1) & 
     (df[col_name_1] == selection_2) & 
     (df[col_name_2] == selection_3)
 ]
 
-# --- 5. KPI CALCULATIONS ---
+# Calculate the KPIs
 if not filtered_df.empty:
     kpi = {
         "Revenue": filtered_df['Ticket_Revenue_EUR'].sum(),
@@ -93,12 +97,13 @@ if not filtered_df.empty:
 else:
     kpi = {"Revenue": 0, "Delay": 0, "CO2": 0, "Rating": 0, "Complaints": 0}
 
-# --- 6. MAIN UI TABS ---
+# Add the tabs for eaach visualisation
 st.subheader(f"Transport Analytics: {selection_1}")
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Key Metrics", "📉 Trend Analysis", "🗺️ Geo Map","🔗 Correlations","🎻Plots"])
 
 with tab1:
+    # Add the metrics
     if filtered_df.empty:
         st.warning(f"No data found for {selection_2} and {selection_3} in {selection_1}.")
     else:
@@ -115,6 +120,7 @@ with tab1:
             st.dataframe(filtered_df)
 
 with tab2:
+    # Show trends
     if filtered_df.empty:
         st.warning("No data available for trend analysis.")
     else:
@@ -141,6 +147,7 @@ with tab2:
         st.plotly_chart(fig_trend, width='stretch')
 
 with tab3:
+    # Plot locations on the European Map
     st.subheader("Geographic Distribution")
     
     if filtered_df.empty:
@@ -155,6 +162,7 @@ with tab3:
             color="Customer_Rating", 
             color_continuous_scale=px.colors.sequential.Plotly3_r,
             size_max=35, 
+            opacity=0.1,
             zoom=10,
             hover_name="City",
             title=f"Location Analysis for {selection_1}"
@@ -172,21 +180,19 @@ with tab3:
         st.plotly_chart(fig_map, width='stretch')
 
 with tab4:
+    #Create the Correlation Heatmap
     st.subheader("Numerical Correlation Matrix")
     st.write("This map shows how strongly two metrics are related. 1.0 is a perfect positive correlation, -1.0 is a perfect negative correlation.")
 
     if filtered_df.empty:
         st.warning("No data available for correlation analysis.")
     else:
-        # 1. Select only numerical columns for correlation
         numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
 
         numeric_df = numeric_df.drop(columns=['lon', 'lat'])
         
-        # 2. Calculate the correlation matrix
         corr_matrix = numeric_df.corr()
 
-        # 3. Create the Plotly Heatmap
         fig_corr = px.imshow(
             corr_matrix,
             text_auto=True, # This puts the actual numbers inside the squares
@@ -203,4 +209,63 @@ with tab4:
         )
         
         st.plotly_chart(fig_corr, width='stretch')
+
+
+with tab5:
+    # Show the violin and Box plots for the selected data
+    st.subheader("Metric Distributions - Violin and Box Plots")
+    
+    if filtered_df.empty:
+        st.warning("No data matches these filters.")
+    else:
+        filtered_df =filtered_df.drop(columns=['Record_ID', 'lat','lon','Date','Country', 'Route_Type'])
+        numeric_cols = filtered_df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+        all_cat_cols = [c for c in filtered_df.columns if c not in numeric_cols]
         
+        # To prevent a plot with only one single bar (since City/Opt1/Opt2 are filtered),
+        # we let the user pick a grouping column that isn't one of the fixed filters.
+        fixed_filters = ['City', col_name_1, col_name_2]
+        grouping_options = [c for c in all_cat_cols if c not in fixed_filters]
+        
+        # If no other categories exist, fallback to any categorical column
+        category_col = st.selectbox("Group by:", options=grouping_options if grouping_options else all_cat_cols)
+
+        # PREVENT "DOTS": Force category to string for Plotly
+        plot_df = filtered_df.copy()
+        plot_df[category_col] = plot_df[category_col].astype(str)
+
+        for metric in numeric_cols:
+            st.write(f"### {metric}")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                fig_violin = px.violin(
+                    plot_df,
+                    x=category_col,
+                    y=metric,
+                    color=category_col,
+                    box=True,
+                    points="all",
+                    template="plotly_white"
+                )
+                fig_violin.update_xaxes(type='category') # FORCES categorical layout
+                fig_violin.update_layout(showlegend=False, margin=dict(t=30, b=0))
+                st.plotly_chart(fig_violin, use_container_width=True)
+            
+            with col2:
+                fig_box = px.box(
+                    plot_df,
+                    x=category_col,
+                    y=metric,
+                    color=category_col,
+                    points="outliers",
+                    template="plotly_white"
+                )
+                fig_box.update_xaxes(type='category') # FORCES categorical layout
+                fig_box.update_layout(showlegend=False, margin=dict(t=30, b=0))
+                st.plotly_chart(fig_box, use_container_width=True)
+            
+            st.divider()
+
+st.sidebar.divider()
+st.sidebar.markdown("<h4 style='text-align: center;'>Dashboard Created by: 25119947 for COM7021</h4>", unsafe_allow_html=True)
