@@ -9,30 +9,92 @@ st.set_page_config(layout="wide")
 import modules.scrollbar as scrollbar
 scrollbar.show_scrollbar()
 
-st.markdown("""
+# Auto change St.metrics text from light to dark depending on mode
+import streamlit as st
+
+st.markdown(
+    """
     <style>
+    /* st.metric value */
     [data-testid="stMetricValue"] {
-        text-align: left;
-        color: #007BFF; 
+        color: #007BFF; !important;
     }
+
+    /* st.metric label */
     [data-testid="stMetricLabel"] {
-        text-align: justify;
-        color: #007BFF;
-        font-size: 20px !important; 
+        color: var(--st-text-color) !important;
+    }
+
+    /* Optional: metric delta text */
+    [data-testid="stMetricDelta"] {
+        color: var(--st-text-color) !important;
     }
     </style>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Passengers", "12,450")
+col2.metric("Trips", "1,240")
+col3.metric("Customer Rating", "4.6")
+
 st.title('Ecomove Management Dashboard')
 st.sidebar.title('Ecomove')
 st.sidebar.divider()
 # Add the Overall Metrics
 st.subheader('Overall Metrics')
 
-st.markdown('<p>The overall metrics for all cities and transport are displayed here.</p>', unsafe_allow_html=True)
-
 # Load data from ecomove.ipynb after cleaning
-
 df=pd.read_excel("cleaned_ds.xlsx")
+
+# Calculate the overall KPIs
+df_kpi = df[
+    [
+        "Date",
+        "Ticket_Revenue_EUR",
+        "Average_Delay_Minutes",
+        "Customer_Rating",
+        "CO2_Saved_KG",
+        "Accessibility_Complaints",
+    ]
+].copy()
+
+df_kpi["Date"] = pd.to_datetime(df_kpi["Date"], errors="coerce")
+df_kpi = df_kpi.dropna(subset=["Date"])
+kpi = {
+        "Revenue": df_kpi['Ticket_Revenue_EUR'].sum(),
+        "Delay": df_kpi['Average_Delay_Minutes'].mean(),
+        "CO2": df_kpi['CO2_Saved_KG'].sum(),
+        "Rating": df_kpi['Customer_Rating'].mean(),
+        "Complaints": df_kpi['Accessibility_Complaints'].sum()
+    }
+
+# Add CSS to center and turn metrics blue
+st.markdown("""
+    <style>
+    [data-testid="stMetricValue"] {
+        text-align: left;
+        color: #1E90FF; 
+    }
+    [data-testid="stMetricLabel"] {
+        text-align: justify;
+        color: #ffffff;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+cols = st.columns([3, 2, 2, 3, 2])
+cols[0].metric("Total Revenue (€)", f"{kpi['Revenue']:,.2f}")
+cols[1].metric("Avg Delay (min)", f"{kpi['Delay']:.2f}")
+cols[2].metric("Avg Rating", f"{kpi['Rating']:.2f}")
+cols[3].metric("CO2 Saved (kg)", f"{kpi['CO2']:,.2f}")
+cols[4].metric("Complaints", f"{kpi['Complaints']:.0f}")
+
+st.divider()
+
+st.markdown('<p>The overall metrics for all cities and transport are displayed here.</p>', unsafe_allow_html=True)
 
 # Map coordinates for each city in the data
 city_coords = {
