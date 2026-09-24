@@ -34,12 +34,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-col1, col2, col3 = st.columns(3)
-
-col1.metric("Passengers", "12,450")
-col2.metric("Trips", "1,240")
-col3.metric("Customer Rating", "4.6")
-
 st.title('Ecomove Management Dashboard')
 st.sidebar.title('Ecomove')
 st.sidebar.divider()
@@ -162,7 +156,7 @@ else:
 # Add the tabs for eaach visualisation
 st.subheader(f"Transport Analytics: {selection_1}")
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Key Metrics", "📉 Trend Analysis", "🗺️ Geo Map","🔗 Correlations","🎻Plots"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📈 Key Metrics", "📉 Trend Analysis", "🗺️ Geo Map","🔗 Correlations","🎻Plots", "↔️Comparisons"])
 
 with tab1:
     # Add the metrics
@@ -328,6 +322,124 @@ with tab5:
                 st.plotly_chart(fig_box, width='stretch')
             
             st.divider()
+with tab6:
+    # Add a visualisation to compare the selected city in the sidebar 
+    # and the city select in the select box. The code should remove the 
+    # city selected in the sidebar from the select box dynamically
 
+    st.subheader('Compare City Key Metrics')
+    
+
+
+    if filtered_df.empty:
+        st.warning("No data available for comparison.")
+    else:
+        available_cities = (
+            df.loc[df["City"] != selection_1, "City"]
+            .dropna()
+            .unique()
+            .tolist()
+        )
+
+        if not available_cities:
+            st.warning("No other cities are available for comparison.")
+        else:
+            city_to_compare = st.selectbox(
+                "Choose City:",
+                options=available_cities
+            )
+
+            metric_options = [
+                "Ticket_Revenue_EUR",
+                "Average_Delay_Minutes",
+                "CO2_Saved_KG",
+                "Customer_Rating",
+                "Accessibility_Complaints",
+            ]
+
+            selected_metrics = st.multiselect(
+                "Choose Metrics to Compare:",
+                options=metric_options,
+                default=metric_options
+            )
+
+            if not selected_metrics:
+                st.info(
+                    "Select at least one metric to create the bar chart."
+                )
+            else:
+                selected_cities = [
+                    selection_1,
+                    city_to_compare
+                ]
+
+                # Use only the selected cities and metrics
+                comparison_df = df.loc[
+                    df["City"].isin(selected_cities),
+                    ["City"] + selected_metrics
+                ].copy()
+
+                # Convert selected metrics to numeric
+                comparison_df[selected_metrics] = comparison_df[
+                    selected_metrics
+                ].apply(pd.to_numeric, errors="coerce")
+
+                # Calculate average values by city
+                grouped_df = (
+                    comparison_df
+                    .groupby("City", as_index=False)[selected_metrics]
+                    .mean()
+                )
+
+                # Reshape data for Plotly
+                chart_df = grouped_df.melt(
+                    id_vars="City",
+                    value_vars=selected_metrics,
+                    var_name="Metric",
+                    value_name="Value"
+                ).dropna(subset=["Value"])
+
+                if chart_df.empty:
+                    st.warning(
+                        "No data is available for the selected cities "
+                        "and metrics."
+                    )
+                else:
+                    fig = px.bar(
+                        chart_df,
+                        x="Metric",
+                        y="Value",
+                        color="City",
+                        barmode="group",
+                        text_auto=".2f",
+                        title=(
+                            f"Metric Comparison: "
+                            f"{selection_1} vs {city_to_compare}"
+                        ),
+                        category_orders={
+                            "City": selected_cities,
+                            "Metric": selected_metrics
+                        },
+                        color_discrete_sequence=(
+                            px.colors.qualitative.Set2
+                        )
+                    )
+
+                    fig.update_layout(
+                        xaxis_title="Metric",
+                        yaxis_title="Average Value",
+                        legend_title="City",
+                        height=600,
+                        hovermode="x unified"
+                    )
+
+                    fig.update_traces(
+                        textposition="outside"
+                    )
+
+                    st.plotly_chart(
+                        fig,
+                        use_container_width=True
+                    )
 st.sidebar.divider()
 st.sidebar.markdown("<h4 style='text-align: center;'>Dashboard Created by: 25119947 for COM7021</h4>", unsafe_allow_html=True)
