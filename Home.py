@@ -11,7 +11,7 @@ scrollbar.show_scrollbar()
 st.sidebar.title("Ecomove")
 st.sidebar.subheader("Data Dashboard")
 
-df=pd.read_excel("cleaned_ds.xlsx")
+df=pd.read_excel("cleaned_ds.xlsx", engine="openpyxl")
 
 # Drop the Record_Id
 df_cols_filtered = df.columns.drop(["Record_ID"])

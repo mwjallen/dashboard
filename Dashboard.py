@@ -180,63 +180,41 @@ with tab1:
 
 with tab2:
     # Show trends
-    if filtered_df.empty:
-        st.warning("No data available for trend analysis.")
-    else:
-        st.subheader("Performance Trends Over Time")
-        
-        trend_metric = st.selectbox(
-            "Select Metric to Visualize", 
-            options=['Ticket_Revenue_EUR', 'Average_Delay_Minutes', 'CO2_Saved_KG', 'Customer_Rating']
-        )
-        
-        # Aggregate for a clean line
-        if "Average" in trend_metric or "Rating" in trend_metric:
-            trend_data = filtered_df.groupby('Date')[trend_metric].mean().reset_index()
-        else:
-            trend_data = filtered_df.groupby('Date')[trend_metric].sum().reset_index()
-            
-        fig_trend = px.line(
-            trend_data, x='Date', y=trend_metric, 
-            title=f"{trend_metric} Trend for {selection_1}",
-            markers=True
-        )
-        fig_trend.update_traces(line_color='#007BFF', line_width=3)
-        fig_trend.update_layout(template="plotly_white", hovermode="x unified")
-        st.plotly_chart(fig_trend, width='stretch')
 
-with tab3:
-    # Plot locations on the European Map
-    st.subheader("Geographic Distribution")
-    
-    if filtered_df.empty:
-        st.warning("No data available to map.")
-    else:
-        # Create Mapbox Scatter
-        fig_map = px.scatter_map(
-            filtered_df, 
-            lat="lat", 
-            lon="lon", 
-            size="Ticket_Revenue_EUR", 
-            color="Customer_Rating", 
-            color_continuous_scale=px.colors.sequential.Plotly3_r,
-            size_max=35, 
-            opacity=0.1,
-            zoom=10,
-            hover_name="City",
-            title=f"Location Analysis for {selection_1}"
-        )
+    st.warning("No data is available for the selected filters.")
 
-        
-        fig_map.update_layout(
-            mapbox_style="open-street-map", 
-            margin={"r":0,"t":40,"l":0,"b":0}
-        )
+if filtered_df.empty:
+    st.warning("No data is available for the selected filters.")
+else:
+    map_center = {
+        "lat": filtered_df["lat"].mean(),
+        "lon": filtered_df["lon"].mean()
+    }
 
-        fig_map.update_layout(mapbox_center={"lat": filtered_df['lat'].mean(), 
-                                             "lon": filtered_df['lon'].mean()}, mapbox_zoom=10)
-        
-        st.plotly_chart(fig_map, width='stretch')
+    fig_map = px.scatter_map(
+        filtered_df,
+        lat="lat",
+        lon="lon",
+        size="Ticket_Revenue_EUR",
+        color="Customer_Rating",
+        color_continuous_scale=px.colors.sequential.Plotly3_r,
+        size_max=35,
+        opacity=0.1,
+        zoom=10,
+        center=map_center,
+        map_style="open-street-map",
+        hover_name="City",
+        title=f"Location Analysis for {selection_1}"
+    )
+
+    fig_map.update_layout(
+        margin=dict(r=0, t=40, l=0, b=0)
+    )
+
+    st.plotly_chart(
+        fig_map,
+        use_container_width=True
+    )
 
 with tab4:
     #Create the Correlation Heatmap
