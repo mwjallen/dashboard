@@ -88,7 +88,6 @@ cols[4].metric("Complaints", f"{kpi['Complaints']:.0f}")
 
 st.divider()
 
-st.markdown('<p>The overall metrics for all cities and transport are displayed here.</p>', unsafe_allow_html=True)
 
 # Map coordinates for each city in the data
 city_coords = {
@@ -155,6 +154,10 @@ else:
 
 # Add the tabs for eaach visualisation
 st.subheader(f"Transport Analytics: {selection_1}")
+
+st.markdown('<p>The metrics based on Executive Filters are diplayed here. Choose a tab to access further details for the selected city.</p>', 
+            unsafe_allow_html=True)
+
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📈 Key Metrics", "📉 Trend Analysis", "🗺️ Geo Map","🔗 Correlations","🎻Plots", "↔️Comparisons"])
 
