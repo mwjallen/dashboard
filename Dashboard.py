@@ -233,8 +233,8 @@ with tab3:
             margin={"r":0,"t":40,"l":0,"b":0}
         )
 
-        fig_map.update_layout(mapbox_center={"lat": filtered_df['lat'].mean(), 
-                                             "lon": filtered_df['lon'].mean()}, mapbox_zoom=10)
+        fig_map.update_layout(map_center={"lat": filtered_df['lat'].mean(), 
+                                             "lon": filtered_df['lon'].mean()}, map_zoom=10)
         
         st.plotly_chart(fig_map, width='stretch')
 
