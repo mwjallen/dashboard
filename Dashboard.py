@@ -38,7 +38,7 @@ st.title('Ecomove Management Dashboard')
 st.sidebar.title('Ecomove')
 st.sidebar.divider()
 # Add the Overall Metrics
-st.subheader('Overall Metrics')
+st.subheader('Combined Performance Metrics')
 
 # Load data from ecomove.ipynb after cleaning
 df=pd.read_excel("cleaned_ds.xlsx")
@@ -177,6 +177,22 @@ with tab1:
         st.divider()
         with st.expander("View Raw Filtered Data"):
             st.dataframe(filtered_df)
+            # Dynamically assign the filename using the City column
+            if not filtered_df.empty and "City" in filtered_df.columns:
+                city = filtered_df["City"].dropna().iloc[0]
+                filename = f"{city}_filtered_data.csv"
+            else:
+                filename = "filtered_data.csv"
+
+            # Prepare CSV data
+            csv_data = filtered_df.to_csv(index=False).encode("utf-8")
+
+            st.download_button(
+                label="Download filtered data",
+                data=csv_data,
+                file_name=filename,
+                mime="text/csv",
+            )
 
 with tab2:
     # Show trends
@@ -327,12 +343,10 @@ with tab5:
             st.divider()
 with tab6:
     # Add a visualisation to compare the selected city in the sidebar 
-    # and the city select in the select box. The code should remove the 
+    # and the city selected in the select box. The code should remove the 
     # city selected in the sidebar from the select box dynamically
 
     st.subheader('Compare City Key Metrics')
-    
-
 
     if filtered_df.empty:
         st.warning("No data available for comparison.")
