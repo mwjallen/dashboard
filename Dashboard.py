@@ -223,7 +223,7 @@ with tab2:
 
 with tab3:
     # Plot locations on the European Map
-    st.subheader("Geographic Distribution")
+    st.subheader("Geographic City Location - Revenue & Customer Rating")
     
     if filtered_df.empty:
         st.warning("No data available to map.")
