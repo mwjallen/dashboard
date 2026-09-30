@@ -250,7 +250,7 @@ with tab3:
         )
 
         fig_map.update_layout(map_center={"lat": filtered_df['lat'].mean(), 
-                                             "lon": filtered_df['lon'].mean()}, map_zoom=10)
+                                             "lon": filtered_df['lon'].mean()}, map_zoom=4)
         
         st.plotly_chart(fig_map, width='stretch')
 
